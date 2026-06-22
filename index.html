@@ -1,479 +1,640 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Deccan AI | Training LLMs</title>
-<style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Inter',sans-serif;background:#111113;color:#F6F3F0;min-height:100vh;font-size:14px;}
+:root{
+  --bg:#111113;--card:#161619;--line:#1e1e26;--text:#F6F3F0;--muted:#6b6b7a;
+  --blue:#175FFF;--blue-d:#1142a8;--cyan:#00E5C8;--gold:#FFC93C;--red:#ff4450;--purple:#9d6bff;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;padding-bottom:170px;}
 
-.topbar{background:#111113;border-bottom:1px solid #1e1e26;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+/* ───────────── TOP BAR ───────────── */
+.topbar{background:var(--bg);border-bottom:1px solid var(--line);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1200;}
 .brand{display:flex;align-items:center;gap:9px;}
-.brand-dot{width:28px;height:28px;background:#175FFF;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;flex-shrink:0;}
-.brand-name{font-size:13px;font-weight:600;color:#F6F3F0;}
+.brand-dot{width:28px;height:28px;background:var(--blue);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;flex-shrink:0;}
+.brand-name{font-size:13px;font-weight:600;}
 .brand-sub{font-size:10px;color:#555;margin-top:1px;}
 .mod-pill{background:rgba(23,95,255,.12);border:1px solid rgba(23,95,255,.25);color:#6e9fff;font-size:11px;font-weight:500;padding:4px 11px;border-radius:20px;}
 
-.steps{max-width:900px;margin:18px auto 0;padding:0 24px;display:flex;align-items:center;}
+/* ───────────── HUD ───────────── */
+.hud{max-width:900px;margin:12px auto 0;padding:0 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:relative;z-index:1000;}
+.hud-chip{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;}
+.hearts{gap:3px;}
+.heart{font-size:14px;line-height:1;transition:transform .3s,filter .3s,opacity .3s;}
+.heart.lost{filter:grayscale(1) brightness(.5);opacity:.45;transform:scale(.8);}
+.heart.pop{animation:heartPop .45s ease;}
+@keyframes heartPop{0%{transform:scale(1)}40%{transform:scale(1.5)}100%{transform:scale(.8)}}
+.streak{color:var(--gold);}
+.streak .flame{font-size:14px;display:inline-block;}
+.streak.lit .flame{animation:flicker .7s ease-in-out infinite;}
+@keyframes flicker{0%,100%{transform:scale(1) rotate(-3deg);filter:drop-shadow(0 0 3px var(--gold))}50%{transform:scale(1.18) rotate(3deg);filter:drop-shadow(0 0 8px var(--gold))}}
+.xp-chip{flex:1;min-width:150px;gap:9px;}
+.xp-track{flex:1;height:7px;background:#0c0c0f;border-radius:4px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.5);}
+.xp-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--cyan),var(--blue));border-radius:4px;transition:width .6s cubic-bezier(.16,1,.3,1);}
+.xp-val{color:var(--cyan);min-width:54px;text-align:right;font-variant-numeric:tabular-nums;}
+.lvl{color:var(--purple);background:rgba(157,107,255,.1);border-color:rgba(157,107,255,.3);}
+.lvl.bump{animation:lvlBump .6s ease;}
+@keyframes lvlBump{0%{transform:scale(1)}40%{transform:scale(1.35);background:rgba(157,107,255,.35)}100%{transform:scale(1)}}
+
+/* ───────────── STEP RAIL ───────────── */
+.steps{max-width:900px;margin:14px auto 0;padding:0 24px;display:flex;align-items:center;position:relative;z-index:1000;}
 .step{display:flex;align-items:center;gap:6px;flex:1;min-width:0;}
-.step-num{width:22px;height:22px;border-radius:50%;border:1.5px solid #2a2a34;display:flex;align-items:center;justify-content:center;font-size:10px;color:#444;flex-shrink:0;transition:all .3s;}
-.step-num.active{border-color:#175FFF;color:#6e9fff;background:rgba(23,95,255,.1);}
-.step-num.done{border-color:#00E5C8;background:rgba(0,229,200,.12);color:#00E5C8;}
+.step-num{width:24px;height:24px;border-radius:50%;border:1.5px solid #2a2a34;display:flex;align-items:center;justify-content:center;font-size:10px;color:#444;flex-shrink:0;transition:all .3s;}
+.step-num.active{border-color:var(--blue);color:#6e9fff;background:rgba(23,95,255,.1);box-shadow:0 0 0 4px rgba(23,95,255,.1);}
+.step-num.done{border-color:var(--cyan);background:var(--cyan);color:#08110f;}
 .step-lbl{font-size:11px;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .3s;}
 .step-lbl.active{color:#c8c8d4;}
-.step-line{flex:1;height:1px;background:#1e1e26;margin:0 4px;max-width:36px;transition:background .3s;}
-.step-line.done{background:#00E5C8;}
+.step-line{flex:1;height:2px;background:var(--line);margin:0 4px;max-width:36px;transition:background .4s;}
+.step-line.done{background:var(--cyan);}
 
-/* Core layout tracks */
+/* ───────────── LAYOUT ───────────── */
 .layout{max-width:1160px;margin:0 auto;padding:0 24px;position:relative;}
-.content{max-width:860px;min-width:0;padding:18px 0 120px;}
+.content{max-width:860px;min-width:0;padding:18px 0 40px;}
 
 .hero{margin-bottom:18px;}
 .hero-tag{display:inline-block;background:rgba(23,95,255,.12);border:1px solid rgba(23,95,255,.2);color:#6e9fff;font-size:11px;font-weight:500;padding:3px 9px;border-radius:5px;margin-bottom:10px;}
-.hero h1{font-size:20px;font-weight:700;line-height:1.3;color:#F6F3F0;margin-bottom:6px;}
-.hero h1 span{color:#175FFF;}
-.hero p{font-size:13px;color:#6b6b7a;line-height:1.65;}
+.hero h1{font-size:20px;font-weight:800;line-height:1.3;margin-bottom:6px;}
+.hero h1 span{color:var(--blue);}
+.hero p{font-size:13px;color:var(--muted);line-height:1.65;}
 
-.card{background:#161619;border:1px solid #1e1e26;border-radius:12px;padding:14px 16px;margin-bottom:12px;transition:border-color .25s,box-shadow .25s;}
-.card.highlight{border-color:rgba(23,95,255,.45);box-shadow:0 0 0 2px rgba(23,95,255,.08);}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px;transition:border-color .25s,box-shadow .25s,transform .25s;}
 .card-label{font-size:10px;font-weight:600;color:#444;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
-
 .info-card{display:flex;gap:12px;}
-.info-icon{width:30px;height:30px;background:rgba(23,95,255,.12);border:1px solid rgba(23,95,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:1px;}
-.info-body h3{font-size:12px;font-weight:600;color:#F6F3F0;margin-bottom:4px;}
-.info-body p{font-size:12px;color:#6b6b7a;line-height:1.65;}
+.info-icon{width:32px;height:32px;background:rgba(23,95,255,.12);border:1px solid rgba(23,95,255,.2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;margin-top:1px;}
+.info-body h3{font-size:12px;font-weight:600;margin-bottom:4px;}
+.info-body p{font-size:12px;color:var(--muted);line-height:1.7;}
 .info-body p strong{color:#c8c8d4;}
 
-.reveal{opacity:0;transform:translateY(5px);transition:all .3s ease;pointer-events:none;}
-.reveal.show{opacity:1;transform:none;pointer-events:auto;}
+.reveal{opacity:0;transform:translateY(8px) scale(.99);transition:all .45s cubic-bezier(.16,1,.3,1);pointer-events:none;height:0;overflow:hidden;margin:0;}
+.reveal.show{opacity:1;transform:none;pointer-events:auto;height:auto;overflow:visible;margin-bottom:12px;}
 
-.hint-bar{background:#161619;border:1px solid #1e1e26;border-radius:8px;padding:9px 13px;font-size:12px;color:#6b6b7a;margin-bottom:12px;display:flex;align-items:center;gap:7px;}
-.hint-bar.good{border-color:rgba(0,229,200,.3);color:#00E5C8;background:rgba(0,229,200,.04);}
-.hint-bar.bad{border-color:rgba(255,68,80,.3);color:#ff8a94;background:rgba(255,68,80,.04);}
+/* ───────────── STAGE EXPLORER ───────────── */
+.path-row{display:flex;align-items:center;gap:3px;margin-bottom:12px;}
+.path-dot{width:26px;height:26px;border-radius:50%;border:1.5px solid #252530;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;transition:all .35s;}
+.path-dot.on{border-color:var(--cyan);background:rgba(0,229,200,.1);box-shadow:0 0 10px rgba(0,229,200,.25);}
+.path-line{flex:1;height:2px;background:var(--line);transition:background .4s;}
+.path-line.on{background:var(--cyan);}
 
-.prog-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
-.prog-lbl{font-size:11px;color:#444;white-space:nowrap;}
-.prog-track{flex:1;height:4px;background:#1e1e26;border-radius:2px;overflow:hidden;}
-.prog-fill{height:100%;background:#00E5C8;border-radius:2px;width:0%;transition:width .4s;}
-.prog-val{font-size:11px;color:#00E5C8;font-weight:600;min-width:32px;text-align:right;}
-.reset-link{font-size:11px;color:#444;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;text-decoration:underline;}
-.reset-link:hover{color:#6e9fff;}
-
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-
-.stage-tabs{display:flex;gap:0;margin-bottom:10px;overflow-x:auto;}
-.s-tab{flex:1;min-width:85px;background:#161619;border:1px solid #1e1e26;padding:9px 6px;cursor:pointer;transition:all .18s;border-right:none;text-align:center;}
-.s-tab:first-child{border-radius:9px 0 0 9px;}.s-tab:last-child{border-radius:0 9px 9px 0;border-right:1px solid #1e1e26;}
-.s-tab:hover{background:rgba(23,95,255,.06);}.s-tab.active{background:rgba(23,95,255,.1);border-color:rgba(23,95,255,.35);z-index:1;position:relative;}
-.s-tab .si{font-size:16px;margin-bottom:3px;}.s-tab .sn{font-size:9px;color:#444;margin-bottom:1px;}.s-tab .st{font-size:10px;font-weight:500;color:#6b6b7a;}
+.stage-tabs{display:flex;gap:5px;margin-bottom:12px;overflow-x:auto;}
+.s-tab{flex:1;min-width:88px;background:var(--card);border:1.5px solid var(--line);border-radius:11px;padding:10px 6px;cursor:pointer;transition:transform .15s,background .2s,border-color .2s;text-align:center;box-shadow:0 2px 0 #1a1a20;}
+.s-tab:hover{background:rgba(23,95,255,.06);border-color:rgba(23,95,255,.35);transform:translateY(-2px);}
+.s-tab:active{transform:translateY(1px);box-shadow:none;}
+.s-tab.active{background:rgba(23,95,255,.12);border-color:rgba(23,95,255,.5);box-shadow:0 2px 0 rgba(23,95,255,.25);}
+.s-tab .si{font-size:17px;margin-bottom:3px;}
+.s-tab .sn{font-size:9px;color:#555;margin-bottom:1px;}
+.s-tab .st{font-size:10px;font-weight:600;color:#8a8a9a;}
 .s-tab.active .st{color:#6e9fff;}
 
-.path-row{display:flex;align-items:center;gap:3px;margin-bottom:10px;}
-.path-dot{width:22px;height:22px;border-radius:50%;border:1.5px solid #252530;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all .3s;}
-.path-dot.on{border-color:#00E5C8;background:rgba(0,229,200,.08);}
-.path-line{flex:1;height:1px;background:#1e1e26;transition:background .3s;}.path-line.on{background:#00E5C8;}
-
-.stage-badge{display:inline-block;background:rgba(23,95,255,.12);border:1px solid rgba(23,95,255,.2);color:#6e9fff;font-size:10px;font-weight:500;padding:2px 8px;border-radius:4px;margin-bottom:6px;}
-.stage-badge.good{background:rgba(0,229,200,.1);border-color:rgba(0,229,200,.2);color:#00E5C8;}
-.stage-name{font-size:13px;font-weight:600;color:#F6F3F0;margin-bottom:4px;}
-.stage-desc{font-size:12px;color:#6b6b7a;line-height:1.6;margin-bottom:7px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.stage-badge{display:inline-block;background:rgba(23,95,255,.12);border:1px solid rgba(23,95,255,.2);color:#6e9fff;font-size:10px;font-weight:600;padding:2px 8px;border-radius:5px;margin-bottom:6px;}
+.stage-badge.good{background:rgba(0,229,200,.1);border-color:rgba(0,229,200,.25);color:var(--cyan);}
+.stage-name{font-size:13px;font-weight:700;margin-bottom:4px;}
+.stage-desc{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:8px;}
 .stat-pills{display:flex;flex-wrap:wrap;gap:5px;}
-.stat-pill{background:#111113;border:1px solid #252530;border-radius:5px;padding:3px 8px;font-size:10px;color:#555;}
-.stat-pill.ok{border-color:rgba(0,229,200,.25);color:#00E5C8;}
+.stat-pill{background:var(--bg);border:1px solid #252530;border-radius:6px;padding:3px 8px;font-size:10px;color:#666;}
+.stat-pill.ok{border-color:rgba(0,229,200,.3);color:var(--cyan);}
 
-.poll-row{display:flex;align-items:center;justify-content:space-between;background:#111113;border:1px solid #252530;border-radius:8px;padding:8px 11px;margin-bottom:6px;cursor:pointer;font-size:12px;color:#8a8a9a;transition:all .18s;gap:8px;}
-.poll-row:hover{border-color:rgba(23,95,255,.3);}.poll-row.voted{pointer-events:none;}
+.out-box{background:#0d0d10;border:1px solid var(--line);border-radius:10px;padding:11px 13px;min-height:120px;font-size:12px;color:var(--muted);line-height:1.7;transition:all .3s;white-space:pre-wrap;word-break:break-word;}
+.out-box.active{border-color:rgba(0,229,200,.4);color:#c8c8d4;animation:fadeUp .35s ease;}
+.out-box.warn{border-color:rgba(255,170,30,.35);color:#c8a040;animation:fadeUp .35s ease;}
+.out-box.error{border-color:rgba(255,68,80,.35);color:#ff8a94;animation:fadeUp .35s ease;}
+.out-note{font-size:10px;color:#555;margin-top:6px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.cot-block{border-left:2px solid rgba(0,229,200,.4);padding-left:9px;margin-bottom:6px;}
+.cot-step{font-size:10px;color:#555;margin-bottom:2px;}.cot-step span{color:var(--cyan);}
+
+/* ───────────── POLL ───────────── */
+.poll-row{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1.5px solid #252530;border-radius:10px;padding:10px 12px;margin-bottom:6px;cursor:pointer;font-size:12px;color:#9a9aa6;transition:all .15s;gap:8px;box-shadow:0 2px 0 #1a1a20;}
+.poll-row:hover{border-color:rgba(23,95,255,.4);color:#c8c8d4;transform:translateY(-1px);}
+.poll-row:active{transform:translateY(1px);box-shadow:none;}
+.poll-row.voted{pointer-events:none;}
 .poll-right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
-.poll-track{width:60px;height:3px;background:#1e1e26;border-radius:2px;overflow:hidden;}
-.poll-fill{height:100%;background:#175FFF;border-radius:2px;transition:width .4s;width:0%;}
-.poll-pct{font-size:10px;color:#555;min-width:26px;text-align:right;}
-.poll-result{font-size:12px;color:#00E5C8;background:rgba(0,229,200,.05);border:1px solid rgba(0,229,200,.18);border-radius:7px;padding:8px 11px;margin-top:7px;line-height:1.6;display:none;}
+.poll-track{width:64px;height:4px;background:var(--line);border-radius:2px;overflow:hidden;}
+.poll-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));border-radius:2px;transition:width .5s;width:0%;}
+.poll-pct{font-size:10px;color:#777;min-width:28px;text-align:right;font-weight:600;}
+.poll-result{font-size:12px;color:var(--cyan);background:rgba(0,229,200,.05);border:1px solid rgba(0,229,200,.2);border-radius:9px;padding:9px 12px;margin-top:8px;line-height:1.6;display:none;}
 
-.quiz-wrap{background:#161619;border:1px solid #1e1e26;border-radius:12px;padding:14px 16px;margin-bottom:16px;transition:border-color .25s;}
-.quiz-wrap.highlight{border-color:rgba(23,95,255,.45);box-shadow:0 0 0 2px rgba(23,95,255,.08);}
+/* ───────────── QUIZ ───────────── */
+.quiz-wrap{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
 .quiz-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
-.quiz-label{font-size:12px;font-weight:600;color:#F6F3F0;}
+.quiz-label{font-size:12px;font-weight:600;}
 .quiz-score{font-size:12px;color:#444;}
-.quiz-q{font-size:13px;font-weight:500;color:#F6F3F0;line-height:1.5;margin-bottom:10px;}
+.quiz-q{font-size:13px;font-weight:500;line-height:1.5;margin-bottom:10px;}
 .quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-.opt-btn{background:#111113;border:1px solid #252530;color:#8a8a9a;padding:9px 11px;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;text-align:left;transition:all .18s;line-height:1.4;}
-.opt-btn:hover{border-color:rgba(23,95,255,.35);color:#c8c8d4;}
-.opt-btn.correct{border-color:rgba(0,229,200,.4);background:rgba(0,229,200,.05);color:#00E5C8;}
-.opt-btn.wrong{border-color:rgba(255,68,80,.35);background:rgba(255,68,80,.05);color:#ff8a94;}
+.opt-btn{background:var(--bg);border:1.5px solid #252530;color:#8a8a9a;padding:10px 11px;border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;text-align:left;transition:all .15s;line-height:1.4;box-shadow:0 2px 0 #1a1a20;}
+.opt-btn:hover{border-color:rgba(23,95,255,.4);color:#c8c8d4;transform:translateY(-1px);}
+.opt-btn:active{transform:translateY(1px);box-shadow:none;}
+.opt-btn.correct{border-color:rgba(0,229,200,.5);background:rgba(0,229,200,.06);color:var(--cyan);box-shadow:0 2px 0 rgba(0,229,200,.2);animation:dropPop .45s ease;}
+.opt-btn.wrong{border-color:rgba(255,68,80,.45);background:rgba(255,68,80,.06);color:#ff8a94;animation:shake .4s;}
+@keyframes dropPop{0%{transform:scale(1)}45%{transform:scale(1.04)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 .quiz-fb{margin-top:9px;font-size:12px;color:#555;line-height:1.6;}
-.quiz-fb.ok{color:#00E5C8;}
-.next-btn{margin-top:8px;background:transparent;border:1px solid #252530;color:#444;padding:6px 13px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;display:none;transition:all .18s;}
-.next-btn:hover{border-color:#175FFF;color:#6e9fff;}
+.quiz-fb.ok{color:var(--cyan);}
+.next-btn{margin-top:8px;background:transparent;border:1px solid #252530;color:#444;padding:6px 13px;border-radius:8px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;display:none;transition:all .18s;}
+.next-btn:hover{border-color:var(--blue);color:#6e9fff;}
 
-.cot-block{border-left:2px solid rgba(0,229,200,.3);padding-left:9px;margin-bottom:6px;}
-.cot-step{font-size:10px;color:#444;margin-bottom:2px;}.cot-step span{color:#00E5C8;}
+/* ───────────── SPOTLIGHT ───────────── */
+#dim{position:fixed;inset:0;background:rgba(8,8,12,.62);z-index:900;opacity:0;pointer-events:none;transition:opacity .45s ease;}
+#dim.on{opacity:1;}
+.lit-target{position:relative;z-index:950;border-radius:14px;}
+#spotlight{
+  position:fixed;top:0;left:0;width:0;height:0;border-radius:16px;z-index:1100;
+  border:2px solid rgba(23,95,255,0);pointer-events:none;opacity:0;
+  transition:top .6s cubic-bezier(.16,1,.3,1),left .6s cubic-bezier(.16,1,.3,1),
+             width .6s cubic-bezier(.16,1,.3,1),height .6s cubic-bezier(.16,1,.3,1),
+             border-color .5s ease,opacity .4s ease;
+}
+#spotlight.on{opacity:1;border-color:rgba(23,95,255,.7);box-shadow:0 0 22px rgba(23,95,255,.25),0 0 0 1px rgba(0,229,200,.15);}
+#spotlight::after{content:'';position:absolute;inset:-2px;border-radius:16px;border:2px solid rgba(0,229,200,.6);opacity:0;animation:ring 1.8s ease-out infinite;}
+#spotlight.on::after{opacity:1;}
+@keyframes ring{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.05);opacity:0}}
 
-/* ── FLYING TUTOR HUD MOVEMENT COMPANION LAYER ── */
-#axonWidget {
-  position: absolute;
-  right: 12px;
-  top: 140px;
-  width: 240px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 2000;
-  pointer-events: none;
-  transition: top 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
+/* ───────────── FLYING AXON ───────────── */
+#axonWidget{position:fixed;left:0;top:140px;width:74px;height:96px;z-index:1500;pointer-events:none;
+  transition:top .7s cubic-bezier(.16,1,.3,1),left .7s cubic-bezier(.16,1,.3,1);}
+.bot-container{width:74px;height:96px;position:relative;cursor:pointer;pointer-events:auto;display:flex;flex-direction:column;align-items:center;animation:botFloat 2.6s ease-in-out infinite;}
+.bot-container::after{content:'';position:absolute;bottom:-4px;width:15px;height:24px;background:linear-gradient(to bottom,var(--cyan),rgba(23,95,255,.8),transparent);border-radius:50% 50% 20% 20%;filter:drop-shadow(0 0 7px var(--cyan));animation:jetThrust .15s ease-in-out infinite alternate;z-index:1;}
+.bot-head{width:54px;height:46px;background:radial-gradient(circle at 30% 30%,#fff,#e2e8f0,#cbd5e1);border-radius:24px 24px 19px 19px;box-shadow:inset -2px -3px 6px rgba(0,0,0,.15),0 4px 12px rgba(0,0,0,.35);position:relative;display:flex;align-items:center;justify-content:center;z-index:3;}
+.bot-head::before{content:'';position:absolute;top:-9px;width:6px;height:10px;background:#475569;border-radius:3px 3px 0 0;left:calc(50% - 3px);}
+.bot-head::after{content:'';position:absolute;top:-13px;width:8px;height:8px;background:radial-gradient(circle at 30% 30%,#fff,#94a3b8);border-radius:50%;left:calc(50% - 4px);animation:antenna 1.2s ease-in-out infinite;}
+@keyframes antenna{0%,100%{transform:translateX(0)}50%{transform:translateX(2px)}}
+.bot-screen{width:42px;height:28px;background:#111115;border-radius:13px;border:1.5px solid #334155;box-shadow:inset 0 2px 5px rgba(0,0,0,.8);display:flex;align-items:center;justify-content:space-around;padding:0 6px;position:relative;overflow:hidden;}
+.bot-eye{width:6px;height:11px;background:var(--cyan);border-radius:3px;box-shadow:0 0 7px var(--cyan);transition:all .22s;}
+.bot-smile{position:absolute;bottom:4px;width:11px;height:5px;border-bottom:2px solid var(--cyan);border-radius:0 0 6px 6px;filter:drop-shadow(0 0 2px var(--cyan));transition:all .22s;}
+.bot-body{width:38px;height:28px;background:radial-gradient(circle at 30% 30%,#fff,#e2e8f0,#cbd5e1);border-radius:9px 9px 15px 15px;margin-top:-3px;box-shadow:inset -1px -2px 4px rgba(0,0,0,.2),0 3px 6px rgba(0,0,0,.25);position:relative;z-index:2;}
+.bot-body::before{content:'';position:absolute;top:3px;left:7px;width:24px;height:8px;border-bottom:2px solid #334155;border-radius:0 0 11px 11px;}
+.bot-arm-left,.bot-arm-right{position:absolute;width:11px;height:19px;background:#e2e8f0;border-radius:6px;top:46px;box-shadow:0 2px 4px rgba(0,0,0,.2);}
+.bot-arm-left{left:-6px;transform:rotate(20deg);transform-origin:top right;}
+.bot-arm-right{right:-6px;transform:rotate(-35deg);transform-origin:top left;animation:botWave 1.2s ease-in-out infinite alternate;}
+@keyframes botFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes jetThrust{0%{height:20px;opacity:.9}100%{height:27px;opacity:1}}
+@keyframes botWave{0%{transform:rotate(-25deg)}100%{transform:rotate(-48deg)}}
+/* Expressions */
+.bot-container.m-idle .bot-eye{animation:blinkEye 4.2s infinite;}
+@keyframes blinkEye{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.12)}}
+.bot-container.m-happy .bot-eye{height:7px;border-radius:7px 7px 2px 2px;}
+.bot-container.m-happy .bot-smile{width:15px;height:8px;}
+.bot-container.m-celebrate .bot-eye{height:5px;border-radius:7px 7px 0 0;}
+.bot-container.m-celebrate .bot-smile{width:16px;height:9px;}
+.bot-container.m-think .bot-eye{transform:translateY(-2px);height:8px;}
+.bot-container.m-think .bot-eye:nth-child(2){transform:translateY(-4px);}
+.bot-container.m-think .bot-smile{width:6px;height:3px;}
+.bot-container.m-sad .bot-eye{height:7px;transform:translateY(2px) rotate(12deg);opacity:.85;}
+.bot-container.m-sad .bot-eye:nth-child(2){transform:translateY(2px) rotate(-12deg);}
+.bot-container.m-sad .bot-smile{bottom:5px;border-bottom:none;border-top:2px solid var(--cyan);border-radius:6px 6px 0 0;}
+.bot-container.m-wow .bot-eye{width:10px;height:10px;border-radius:50%;}
+.bot-container.m-wow .bot-smile{width:8px;height:8px;border:2px solid var(--cyan);border-radius:50%;bottom:2px;}
+.bot-container.m-think::before{content:'';position:absolute;top:-4px;right:6px;width:5px;height:5px;border-radius:50%;background:var(--cyan);box-shadow:6px -5px 0 -1px var(--cyan),11px -9px 0 -2px var(--cyan);opacity:.8;animation:thinkDots 1.4s ease-in-out infinite;}
+@keyframes thinkDots{0%,100%{opacity:.3}50%{opacity:.9}}
+.bot-container.react-celebrate{animation:botCelebrate .8s ease;}
+@keyframes botCelebrate{0%{transform:translateY(0) rotate(0)}20%{transform:translateY(-16px) rotate(-14deg)}45%{transform:translateY(-4px) rotate(12deg)}70%{transform:translateY(-10px) rotate(-7deg)}100%{transform:translateY(0) rotate(0)}}
+.bot-container.react-sad{animation:botSad .6s ease;}
+@keyframes botSad{0%,100%{transform:translateY(0)}30%{transform:translateY(6px) scale(.95) rotate(-3deg)}60%{transform:translateY(3px) rotate(3deg)}}
 
-.bot-container {
-  width: 65px;
-  height: 85px;
-  position: relative;
-  cursor: pointer;
-  pointer-events: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: botFloat 2.5s ease-in-out infinite;
-}
+/* ───────────── COACH DOCK ───────────── */
+#coachDock{position:fixed;left:0;right:0;bottom:0;z-index:1300;background:linear-gradient(to top,#161619,#161619 70%,rgba(22,22,25,0));border-top:1px solid var(--line);padding:14px 24px calc(14px + env(safe-area-inset-bottom));transform:translateY(120%);transition:transform .55s cubic-bezier(.16,1,.3,1);}
+#coachDock.up{transform:translateY(0);}
+.dock-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;gap:14px;}
+.dock-ava{width:48px;height:48px;border-radius:50%;background:#111115;border:2px solid rgba(0,229,200,.4);flex-shrink:0;display:flex;align-items:center;justify-content:space-around;padding:0 9px;position:relative;box-shadow:0 0 14px rgba(0,229,200,.18);animation:avaBob 1.6s ease-in-out infinite;}
+@keyframes avaBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.ca-eye{width:5px;height:9px;background:var(--cyan);border-radius:3px;box-shadow:0 0 5px var(--cyan);transition:all .22s;}
+.ca-mouth{position:absolute;bottom:11px;width:10px;height:4px;border-bottom:2px solid var(--cyan);border-radius:0 0 6px 6px;transition:all .22s;}
+.dock-ava.m-happy .ca-eye{height:5px;border-radius:6px 6px 1px 1px;}
+.dock-ava.m-happy .ca-mouth{width:13px;height:6px;}
+.dock-ava.m-celebrate .ca-eye{height:4px;border-radius:6px 6px 0 0;}
+.dock-ava.m-celebrate .ca-mouth{width:14px;height:7px;}
+.dock-ava.m-think .ca-eye{transform:translateY(-2px);}
+.dock-ava.m-think .ca-mouth{width:5px;}
+.dock-ava.m-sad .ca-eye{transform:translateY(1px) rotate(10deg);opacity:.85;}
+.dock-ava.m-sad .ca-mouth{bottom:13px;border-bottom:none;border-top:2px solid var(--cyan);border-radius:6px 6px 0 0;}
+.dock-ava.m-wow .ca-eye{width:8px;height:8px;border-radius:50%;}
+.dock-ava.m-wow .ca-mouth{width:7px;height:7px;border:2px solid var(--cyan);border-radius:50%;bottom:10px;}
+.dock-body{flex:1;min-width:0;}
+.dock-name{font-size:10px;font-weight:700;color:var(--blue);letter-spacing:.04em;display:flex;align-items:center;gap:6px;margin-bottom:3px;}
+.dock-name .live{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 6px var(--cyan);animation:livePulse 1.5s infinite;}
+@keyframes livePulse{0%,100%{opacity:1}50%{opacity:.3}}
+#dockMsg{font-size:13px;color:#dcdce4;line-height:1.5;}
+#dockMsg.again{animation:msgIn .35s ease;}
+@keyframes msgIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.dock-actions{display:flex;gap:8px;flex-shrink:0;align-items:center;}
+.cta{background:var(--blue);color:#fff;border:none;padding:11px 20px;border-radius:12px;font-size:13px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;box-shadow:0 4px 0 var(--blue-d);transition:transform .1s,box-shadow .1s,background .15s;animation:ctaBob 1.5s ease-in-out infinite;}
+.cta:hover{background:#2a6dff;}
+.cta:active{transform:translateY(4px);box-shadow:0 0 0 var(--blue-d);animation:none;}
+@keyframes ctaBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.cta.soft{background:transparent;color:var(--muted);box-shadow:none;border:1.5px solid #2a2a34;animation:none;font-weight:600;padding:10px 16px;}
+.cta.soft:hover{border-color:var(--blue);color:#6e9fff;}
 
-.bot-container::after {
-  content: '';
-  position: absolute;
-  bottom: -5px;
-  width: 14px;
-  height: 24px;
-  background: linear-gradient(to bottom, #00E5C8, rgba(23, 95, 255, 0.8), transparent);
-  border-radius: 50% 50% 20% 20%;
-  filter: drop-shadow(0 0 6px #00E5C8);
-  animation: jetThrust 0.15s ease-in-out infinite alternate;
-  z-index: 1;
-}
+/* ───────────── FX ───────────── */
+#fxLayer{position:fixed;inset:0;pointer-events:none;z-index:1600;overflow:hidden;}
+.xp-float{position:fixed;font-size:15px;font-weight:800;color:var(--gold);text-shadow:0 2px 6px rgba(0,0,0,.6);pointer-events:none;z-index:1700;animation:xpFloat 1.1s ease-out forwards;}
+@keyframes xpFloat{0%{transform:translateY(0) scale(.6);opacity:0}20%{transform:translateY(-10px) scale(1.1);opacity:1}100%{transform:translateY(-60px) scale(1);opacity:0}}
+.confetti{position:absolute;width:9px;height:14px;top:-20px;border-radius:2px;will-change:transform;}
+@keyframes confettiFall{to{transform:translateY(110vh) rotate(720deg);}}
+#toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);background:var(--card);border:1.5px solid rgba(157,107,255,.5);border-radius:18px;padding:20px 28px;z-index:1800;text-align:center;opacity:0;pointer-events:none;box-shadow:0 20px 60px rgba(0,0,0,.6);transition:opacity .35s,transform .35s cubic-bezier(.16,1,.3,1);}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+#toast .t-emoji{font-size:36px;margin-bottom:6px;animation:toastEmoji .8s ease infinite alternate;}
+@keyframes toastEmoji{from{transform:scale(1) rotate(-6deg)}to{transform:scale(1.12) rotate(6deg)}}
+#toast .t-title{font-size:16px;font-weight:800;}
+#toast .t-sub{font-size:12px;color:var(--muted);margin-top:4px;}
 
-.bot-head {
-  width: 50px;
-  height: 42px;
-  background: radial-gradient(circle at 30% 30%, #ffffff, #e2e8f0, #cbd5e1);
-  border-radius: 22px 22px 18px 18px;
-  box-shadow: inset -2px -3px 6px rgba(0,0,0,0.15), 0 4px 10px rgba(0,0,0,0.3);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 3;
+@media(max-width:800px){
+  #axonWidget{display:none;}
+  .quiz-opts{grid-template-columns:1fr;}
+  .two-col{grid-template-columns:1fr;}
+  .dock-actions{flex-direction:column;gap:6px;}
+  .cta{padding:9px 14px;font-size:12px;}
+  .hud{gap:8px;}
 }
-
-.bot-head::before {
-  content: '';
-  position: absolute;
-  top: -8px;
-  width: 6px;
-  height: 9px;
-  background: #475569;
-  border-radius: 3px 3px 0 0;
-  left: calc(50% - 3px);
-}
-.bot-head::after {
-  content: '';
-  position: absolute;
-  top: -12px;
-  width: 8px;
-  height: 8px;
-  background: radial-gradient(circle at 30% 30%, #ffffff, #94a3b8);
-  border-radius: 50%;
-  left: calc(50% - 4px);
-}
-
-.bot-screen {
-  width: 38px;
-  height: 26px;
-  background: #111115;
-  border-radius: 12px;
-  border: 1.5px solid #334155;
-  box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding: 0 5px;
-  position: relative;
-  overflow: hidden;
-}
-
-.bot-eye {
-  width: 6px;
-  height: 10px;
-  background: #00E5C8;
-  border-radius: 3px;
-  box-shadow: 0 0 6px #00E5C8;
-  transition: all 0.2s;
-}
-
-.bot-smile {
-  position: absolute;
-  bottom: 4px;
-  width: 10px;
-  height: 5px;
-  border-bottom: 2px solid #00E5C8;
-  border-radius: 0 0 5px 5px;
-  filter: drop-shadow(0 0 2px #00E5C8);
-}
-
-.bot-body {
-  width: 34px;
-  height: 26px;
-  background: radial-gradient(circle at 30% 30%, #ffffff, #e2e8f0, #cbd5e1);
-  border-radius: 8px 8px 14px 14px;
-  margin-top: -3px;
-  box-shadow: inset -1px -2px 4px rgba(0,0,0,0.2), 0 3px 6px rgba(0,0,0,0.25);
-  position: relative;
-  z-index: 2;
-}
-
-.bot-body::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 6px;
-  width: 22px;
-  height: 8px;
-  border-bottom: 2px solid #334155;
-  border-radius: 0 0 10px 10px;
-}
-
-.bot-arm-left, .bot-arm-right {
-  position: absolute;
-  width: 10px;
-  height: 18px;
-  background: #e2e8f0;
-  border-radius: 5px;
-  top: 42px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-.bot-arm-left {
-  left: -6px;
-  transform: rotate(20deg);
-  transform-origin: top right;
-}
-.bot-arm-right {
-  right: -6px;
-  transform: rotate(-35deg);
-  transform-origin: top left;
-  animation: botWave 1.2s ease-in-out infinite alternate;
-}
-
-.bot-container.talk .bot-eye {
-  height: 4px;
-  margin-top: 3px;
-}
-
-@keyframes botFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-@keyframes jetThrust { 0% { height: 20px; opacity: 0.9; } 100% { height: 26px; opacity: 1; } }
-@keyframes botWave { 0% { transform: rotate(-25deg); } 100% { transform: rotate(-45deg); } }
-
-#axonBubble {
-  background: #161619;
-  border: 1px solid rgba(23,95,255,.45);
-  border-radius: 14px 14px 14px 4px;
-  padding: 12px 14px; 
-  width: 240px;
-  margin-top: 8px; 
-  box-shadow: 0 8px 32px rgba(0,0,0,0.7);
-  opacity: 0; 
-  transform: scale(.95) translateY(-8px);
-  transition: opacity .25s ease, transform .25s ease;
-  pointer-events: none;
-}
-#axonBubble.vis { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
-.ax-name {
-  font-size: 10px; font-weight: 600; color: #175FFF;
-  margin-bottom: 5px; display: flex; align-items: center; gap: 5px;
-}
-.ax-dot { width: 6px; height: 6px; border-radius: 50%; background: #00E5C8; display: inline-block; flex-shrink: 0; }
-#axonMsg { font-size: 11.5px; color: #c8c8d4; line-height: 1.65; }
-#axonBtns { display: flex; flex-direction: column; gap: 5px; margin-top: 9px; }
-.axon-btn {
-  background: #175FFF; color: #fff; border: none;
-  padding: 6px 11px; border-radius: 6px;
-  font-size: 11px; font-weight: 600; cursor: pointer;
-  font-family: 'Inter',sans-serif; width: 100%;
-  text-align: left; display: block;
-  transition: background .15s;
-}
-.axon-btn:hover { background: #1249cc; }
-.axon-btn.soft { background: transparent; border: 1px solid #2a2a34; color: #6b6b7a; }
-.axon-btn.soft:hover { border-color: #175FFF; color: #6e9fff; }
-
-@media(max-width: 1160px) {
-  #axonWidget { right: 16px; width: 210px; }
-  #axonBubble { width: 210px; }
-}
-@media(max-width: 800px) {
-  #axonWidget { display: none; }
-  .two-col { grid-template-columns: 1fr; }
-}
-
-.focus-highlight{box-shadow:0 0 0 3px rgba(23,95,255,.12);border-radius:8px;outline:2px solid rgba(23,95,255,.18);transition:box-shadow .25s,outline .25s;}
 </style>
 </head><body>
-<div class="topbar"><div class="brand"><div class="brand-dot">D</div><div><div class="brand-name">Deccan AI Experts</div><div class="brand-sub">Interactive Learning Lab</div></div></div><div class="mod-pill">Module 3 · Training LLMs</div></div>
-<div class="steps"><div class="step"><div class="step-num active" id="sn0">1</div><span class="step-lbl active" id="sl0">Learn</span></div><div class="step-line" id="sl-0"></div><div class="step"><div class="step-num" id="sn1">2</div><span class="step-lbl" id="sl1">Explore</span></div><div class="step-line" id="sl-1"></div><div class="step"><div class="step-num" id="sn2">3</div><span class="step-lbl" id="sl2">Poll</span></div><div class="step-line" id="sl-2"></div><div class="step"><div class="step-num" id="sn3">4</div><span class="step-lbl" id="sl3">Quiz</span></div></div>
 
-<div id="mainPage" class="layout">
+<div class="topbar">
+  <div class="brand"><div class="brand-dot">D</div><div><div class="brand-name">Deccan AI Experts</div><div class="brand-sub">Interactive Learning Lab</div></div></div>
+  <div class="mod-pill">Module 3 · Training LLMs</div>
+</div>
+
+<div class="hud">
+  <div class="hud-chip hearts" id="hearts"><span class="heart">❤️</span><span class="heart">❤️</span><span class="heart">❤️</span></div>
+  <div class="hud-chip streak" id="streakChip"><span class="flame">🔥</span><span id="streakVal">0</span></div>
+  <div class="hud-chip xp-chip"><span style="color:var(--cyan);font-size:11px;">XP</span><div class="xp-track"><div class="xp-fill" id="xpFill"></div></div><span class="xp-val" id="xpVal">0</span></div>
+  <div class="hud-chip lvl" id="lvlChip">Lv <span id="lvlVal">1</span></div>
+</div>
+
+<div class="steps">
+  <div class="step"><div class="step-num active" id="sn0">1</div><span class="step-lbl active" id="sl0">Learn</span></div>
+  <div class="step-line" id="sl-0"></div>
+  <div class="step"><div class="step-num" id="sn1">2</div><span class="step-lbl" id="sl1">Explore</span></div>
+  <div class="step-line" id="sl-1"></div>
+  <div class="step"><div class="step-num" id="sn2">3</div><span class="step-lbl" id="sl2">Poll</span></div>
+  <div class="step-line" id="sl-2"></div>
+  <div class="step"><div class="step-num" id="sn3">4</div><span class="step-lbl" id="sl3">Quiz</span></div>
+</div>
+
+<div class="layout">
 <div class="content">
 
-  <div class="hero" id="heroSection"><div class="hero-tag">Module 3</div><h1>Training an LLM</h1><p>The video sent the same prompt to the model at five training stages. Step through them and watch the output evolve — from gibberish to chain-of-thought reasoning.</p></div>
-  <div class="card info-card" id="conceptCard"><div class="info-icon">🔬</div><div class="info-body"><h3>What the video showed</h3><p>The pipeline starts from a <strong>randomly initialised blank slate</strong>. Each stage adds one capability: language → instruction following → human alignment → step-by-step reasoning. The stages must happen in order.</p></div></div>
+  <div class="hero" id="heroSection">
+    <div class="hero-tag">Module 3</div>
+    <h1>Training an <span>LLM</span></h1>
+    <p>The video sent the same prompt to the model at five training stages. Step through them and watch the output evolve — from gibberish to chain-of-thought reasoning.</p>
+  </div>
+
+  <div class="card info-card" id="conceptCard">
+    <div class="info-icon">🔬</div>
+    <div class="info-body"><h3>What the video showed</h3>
+      <p>The pipeline starts from a <strong>randomly initialised blank slate</strong>. Each stage adds one capability: language → instruction following → human alignment → step-by-step reasoning. The stages must happen in order.</p>
+    </div>
+  </div>
+
   <div class="reveal" id="simArea">
-    <div class="path-row"><div class="path-dot" id="pd0">🎲</div><div class="path-line" id="pl0"></div><div class="path-dot" id="pd1">📚</div><div class="path-line" id="pl1"></div><div class="path-dot" id="pd2">📋</div><div class="path-line" id="pl2"></div><div class="path-dot" id="pd3">❤️</div><div class="path-line" id="pl3"></div><div class="path-dot" id="pd4">🧩</div></div>
-    <div class="stage-tabs"><div class="s-tab active" id="tab0" onclick="setStage(0)"><div class="si">🎲</div><div class="sn">Stage 0</div><div class="st">Random init</div></div><div class="s-tab" id="tab1" onclick="setStage(1)"><div class="si">📚</div><div class="sn">Stage 1</div><div class="st">Pre-training</div></div><div class="s-tab" id="tab2" onclick="setStage(2)"><div class="si">📋</div><div class="sn">Stage 2</div><div class="st">Instruction FT</div></div><div class="s-tab" id="tab3" onclick="setStage(3)"><div class="si">❤️</div><div class="sn">Stage 3</div><div class="st">Preference FT</div></div><div class="s-tab" id="tab4" onclick="setStage(4)"><div class="si">🧩</div><div class="sn">Stage 4</div><div class="st">Reasoning FT</div></div></div>
+    <div class="path-row" id="pathRow">
+      <div class="path-dot" id="pd0">🎲</div><div class="path-line" id="pl0"></div>
+      <div class="path-dot" id="pd1">📚</div><div class="path-line" id="pl1"></div>
+      <div class="path-dot" id="pd2">📋</div><div class="path-line" id="pl2"></div>
+      <div class="path-dot" id="pd3">❤️</div><div class="path-line" id="pl3"></div>
+      <div class="path-dot" id="pd4">🧩</div>
+    </div>
+    <div class="stage-tabs" id="stageTabs">
+      <div class="s-tab active" id="tab0" onclick="setStage(0)"><div class="si">🎲</div><div class="sn">Stage 0</div><div class="st">Random init</div></div>
+      <div class="s-tab" id="tab1" onclick="setStage(1)"><div class="si">📚</div><div class="sn">Stage 1</div><div class="st">Pre-training</div></div>
+      <div class="s-tab" id="tab2" onclick="setStage(2)"><div class="si">📋</div><div class="sn">Stage 2</div><div class="st">Instruction FT</div></div>
+      <div class="s-tab" id="tab3" onclick="setStage(3)"><div class="si">❤️</div><div class="sn">Stage 3</div><div class="st">Preference FT</div></div>
+      <div class="s-tab" id="tab4" onclick="setStage(4)"><div class="si">🧩</div><div class="sn">Stage 4</div><div class="st">Reasoning FT</div></div>
+    </div>
     <div class="two-col">
       <div>
-        <div class="card" id="stageInfoCard" style="margin-bottom:10px;"><div class="stage-badge" id="sBadge">Stage 0</div><div class="stage-name" id="sName">Randomly initialised</div><div class="stage-desc" id="sDesc">All weights are random. No learning has happened — the model is a blank slate.</div><div class="stat-pills" id="sStats"><span class="stat-pill">Language: none</span><span class="stat-pill">Instructions: ✗</span></div></div>
-        <div class="card" id="promptCard"><div style="font-size:10px;font-weight:600;color:#444;margin-bottom:5px;">Prompt used in the video demo</div><div style="font-size:12px;color:#6b6b7a;font-style:italic;">"Could you please help me draft a polite response to this team email?"</div></div>
+        <div class="card" id="stageInfoCard" style="margin-bottom:10px;">
+          <div class="stage-badge" id="sBadge">Stage 0</div>
+          <div class="stage-name" id="sName">Randomly initialised</div>
+          <div class="stage-desc" id="sDesc">All weights are random. No learning has happened — the model is a blank slate.</div>
+          <div class="stat-pills" id="sStats"><span class="stat-pill">Language: none</span><span class="stat-pill">Instructions: ✗</span></div>
+        </div>
+        <div class="card" id="promptCard"><div style="font-size:10px;font-weight:600;color:#444;margin-bottom:5px;">Prompt used in the video demo</div><div style="font-size:12px;color:var(--muted);font-style:italic;">"Could you please help me draft a polite response to this team email?"</div></div>
       </div>
-      <div class="card" id="outputCard"><div class="card-label">Model output at this stage</div><div class="out-box" id="stOut">%7 m% @b^^ ...eM4il... [TOKEN OVERFLOW] ...NULL_ref</div><div class="out-note" id="stStat">No language capability</div></div>
+      <div class="card" id="outputCard"><div class="card-label">Model output at this stage</div><div class="out-box error" id="stOut">%7 m% @b^^ ...eM4il... [TOKEN OVERFLOW] ...NULL_ref</div><div class="out-note" id="stStat">No language capability</div></div>
     </div>
   </div>
+
   <div class="card reveal" id="pollArea">
     <div class="card-label">Quick poll — which stage makes the biggest leap?</div>
-    <div><div class="poll-row" onclick="vote(0)"><span>Stage 1 — Pre-training (learns language)</span><div class="poll-right"><div class="poll-track"><div class="poll-fill" id="pf0"></div></div><span class="poll-pct" id="pp0"></span></div></div><div class="poll-row" onclick="vote(1)"><span>Stage 2 — Instruction FT (follows commands)</span><div class="poll-right"><div class="poll-track"><div class="poll-fill" id="pf1"></div></div><span class="poll-pct" id="pp1"></span></div></div><div class="poll-row" onclick="vote(2)"><span>Stage 3 — Preference FT / RLHF (becomes helpful)</span><div class="poll-right"><div class="poll-track"><div class="poll-fill" id="pf2"></div></div><span class="poll-pct" id="pp2"></span></div></div><div class="poll-row" onclick="vote(3)"><span>Stage 4 — Reasoning FT (chain-of-thought)</span><div class="poll-right"><div class="poll-track"><div class="poll-fill" id="pf3"></div></div><span class="poll-pct" id="pp3"></span></div></div></div>
+    <div>
+      <div class="poll-row" onclick="vote(0)"><span>Stage 1 — Pre-training (learns language)</span><div class="poll-right"><div class="poll-track"><div class="poll-fill" id="pf0"></div></div><span class="poll-pct" id="pp0"></span></div></div>
+      <div class="poll-row" onclick="vote(1)"><span>Stage 2 — Instruction FT (follows commands)</span><div class="poll-right"><div class="poll-track"><div class="poll-fill" id="pf1"></div></div><span class="poll-pct" id="pp1"></span></div></div>
+      <div class="poll-row" onclick="vote(2)"><span>Stage 3 — Preference FT / RLHF (becomes helpful)</span><div class="poll-right"><div class="poll-track"><div class="poll-fill" id="pf2"></div></div><span class="poll-pct" id="pp2"></span></div></div>
+      <div class="poll-row" onclick="vote(3)"><span>Stage 4 — Reasoning FT (chain-of-thought)</span><div class="poll-right"><div class="poll-track"><div class="poll-fill" id="pf3"></div></div><span class="poll-pct" id="pp3"></span></div></div>
+    </div>
     <div class="poll-result" id="pollResult">Most engineers vote for Stage 1. The jump from random noise to fluent language is the most dramatic transformation in the entire pipeline.</div>
   </div>
-  <div class="quiz-wrap reveal" id="quizWrap"><div class="quiz-header"><span class="quiz-label">Check your understanding</span><span class="quiz-score" id="qs">0 / 4</span></div><div class="quiz-q" id="qq"></div><div class="quiz-opts" id="qo"></div><div class="quiz-fb" id="qfb"></div><button class="next-btn" id="qnext" onclick="nextQ()">Next →</button></div>
+
+  <div class="quiz-wrap reveal" id="quizWrap">
+    <div class="quiz-header"><span class="quiz-label">Check your understanding</span><span class="quiz-score" id="qs">0 / 4</span></div>
+    <div class="quiz-q" id="qq"></div>
+    <div class="quiz-opts" id="qo"></div>
+    <div class="quiz-fb" id="qfb"></div>
+    <button class="next-btn" id="qnext" onclick="nextQ()">Next →</button>
+  </div>
 
 </div>
 
+<!-- FLYING AXON -->
 <div id="axonWidget">
-  <div class="bot-container" id="axonBot" onclick="toggleAxon()">
-    <div class="bot-head">
-      <div class="bot-screen">
-        <div class="bot-eye"></div>
-        <div class="bot-eye"></div>
-        <div class="bot-smile"></div>
-      </div>
-    </div>
+  <div class="bot-container m-idle" id="axonBot" onclick="pokeAxon()">
+    <div class="bot-head"><div class="bot-screen"><div class="bot-eye"></div><div class="bot-eye"></div><div class="bot-smile"></div></div></div>
     <div class="bot-body"></div>
-    <div class="bot-arm-left"></div>
-    <div class="bot-arm-right"></div>
-  </div>
-
-  <div id="axonBubble">
-    <div class="ax-name"><span class="ax-dot"></span>Axon</div>
-    <div id="axonMsg">Hi! I'm Axon, your guide.</div>
-    <div id="axonBtns"></div>
+    <div class="bot-arm-left"></div><div class="bot-arm-right"></div>
   </div>
 </div>
-
 </div>
+
+<div id="dim"></div>
+<div id="spotlight"></div>
+<div id="coachDock">
+  <div class="dock-inner">
+    <div class="dock-ava m-idle" id="dockAva"><div class="ca-eye"></div><div class="ca-eye"></div><div class="ca-mouth"></div></div>
+    <div class="dock-body">
+      <div class="dock-name"><span class="live"></span>AXON · YOUR GUIDE</div>
+      <div id="dockMsg">Booting up…</div>
+    </div>
+    <div class="dock-actions" id="dockActions"></div>
+  </div>
+</div>
+<div id="fxLayer"></div>
+<div id="toast"></div>
+
 <script>
-let axonOpen = false;
+/* ════════════ STATE ════════════ */
+let cur=0, pv=false, qI=0, qS=0;
+const visited=new Set();
+let xp=0, level=1, streak=0, hearts=3;
+const XP_PER_LEVEL=100;
 
-function smoothTutorFlight() {
-  const widget = document.getElementById('axonWidget');
-  if(!widget) return;
-  
-  let currentScrollY = window.scrollY;
-  let viewportHeight = window.innerHeight;
-  let flyTargetTop = currentScrollY + (viewportHeight / 3);
-  
-  let maxDocumentHeight = document.documentElement.scrollHeight;
-  let floorLimit = maxDocumentHeight - widget.offsetHeight - 80;
-  
-  let finalFlightCoordinate = Math.max(120, Math.min(flyTargetTop, floorLimit));
-  widget.style.top = Math.round(finalFlightCoordinate) + 'px';
+/* ════════════ CHARACTER MOODS ════════════ */
+const bot=()=>document.getElementById('axonBot');
+const ava=()=>document.getElementById('dockAva');
+function setMood(m){
+  ['m-idle','m-happy','m-celebrate','m-think','m-sad','m-wow'].forEach(c=>{bot().classList.remove(c);ava().classList.remove(c);});
+  bot().classList.add('m-'+m); ava().classList.add('m-'+m);
+  if(m==='celebrate') reactBot('react-celebrate');
+  if(m==='sad') reactBot('react-sad');
 }
+function reactBot(cls){const b=bot();b.classList.remove('react-celebrate','react-sad');void b.offsetWidth;b.classList.add(cls);setTimeout(()=>b.classList.remove(cls),850);}
+function pokeAxon(){reactBot('react-celebrate');}
 
-window.addEventListener('scroll', smoothTutorFlight);
-window.addEventListener('resize', smoothTutorFlight);
-
-function flyTo(targetId, msg, btns) {
-  const target = document.getElementById(targetId);
-  if (target) {
-    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-  speak(msg, btns);
-  setTimeout(smoothTutorFlight, 400);
-}
-
-function speak(msg, btns) {
-  document.getElementById('axonMsg').innerHTML = msg;
-  const bb = document.getElementById('axonBtns');
-  bb.innerHTML = '';
-  (btns || []).forEach(b => {
-    const el = document.createElement('button');
-    el.className = 'axon-btn' + (b.soft ? ' soft' : '');
-    el.textContent = b.t;
-    el.onclick = () => { if (window[b.f]) window[b.f](); };
-    bb.appendChild(el);
+/* ════════════ COACH DOCK ════════════ */
+function coachSay(msg,btns){
+  const m=document.getElementById('dockMsg');
+  m.innerHTML=msg; m.classList.remove('again'); void m.offsetWidth; m.classList.add('again');
+  const a=document.getElementById('dockActions'); a.innerHTML='';
+  (btns||[]).forEach(b=>{
+    const el=document.createElement('button');
+    el.className='cta'+(b.soft?' soft':''); el.textContent=b.t;
+    el.onclick=()=>{if(window[b.f])window[b.f]();};
+    a.appendChild(el);
   });
-  document.getElementById('axonBubble').classList.add('vis');
-  const bot = document.getElementById('axonBot');
-  if (bot) { 
-    bot.classList.add('talk'); 
-    clearTimeout(window._tt); 
-    window._tt = setTimeout(() => bot.classList.remove('talk'), 1400); 
+}
+
+/* ════════════ SPOTLIGHT + FLIGHT ════════════ */
+function rectOf(id){const el=document.getElementById(id);return el?el.getBoundingClientRect():null;}
+let litId=null, lockedSection=null, robotLockId=null;
+
+function placeSpotlight(id){
+  const sp=document.getElementById('spotlight'), r=rectOf(id);
+  if(!sp||!r) return;
+  const pad=10;
+  sp.style.left=(r.left-pad)+'px'; sp.style.top=(r.top-pad)+'px';
+  sp.style.width=(r.width+pad*2)+'px'; sp.style.height=(r.height+pad*2)+'px';
+  sp.classList.add('on'); document.getElementById('dim').classList.add('on');
+  if(litId&&litId!==id){const old=document.getElementById(litId);if(old)old.classList.remove('lit-target');}
+  const el=document.getElementById(id); if(el)el.classList.add('lit-target');
+  litId=id;
+}
+function placeRobot(id){
+  const w=document.getElementById('axonWidget'), r=rectOf(id);
+  if(!w||!r) return;
+  const bw=74, vw=window.innerWidth;
+  let left=r.right-bw+34, top=r.top-96+18;
+  left=Math.max(8,Math.min(left,vw-bw-8));
+  top=Math.max(64,top);
+  w.style.left=left+'px'; w.style.top=top+'px';
+}
+function followLock(){if(!lockedSection)return; placeSpotlight(lockedSection); placeRobot(robotLockId||lockedSection);}
+window.addEventListener('scroll',followLock,{passive:true});
+window.addEventListener('resize',followLock);
+
+function flyTo(id, msg, btns, mood, robotId){
+  const target=document.getElementById(id);
+  if(target){
+    lockedSection=id; robotLockId=robotId||id;
+    target.scrollIntoView({behavior:'smooth',block:'center'});
+    setTimeout(()=>{placeSpotlight(id); placeRobot(robotLockId);},380);
   }
-  axonOpen = true;
+  if(mood) setMood(mood);
+  coachSay(msg, btns);
+}
+function silence(){document.getElementById('dockActions').innerHTML=''; setMood('idle');}
+
+/* ════════════ GAMIFICATION ════════════ */
+function addXP(n,sourceId){
+  xp+=n;
+  const newLevel=Math.floor(xp/XP_PER_LEVEL)+1;
+  document.getElementById('xpVal').textContent=xp;
+  document.getElementById('xpFill').style.width=((xp%XP_PER_LEVEL)/XP_PER_LEVEL*100)+'%';
+  floatXP(n,sourceId);
+  if(newLevel>level){level=newLevel;levelUp();}
+}
+function floatXP(n,sourceId){
+  const r=sourceId?rectOf(sourceId):null;
+  const el=document.createElement('div');
+  el.className='xp-float'; el.textContent='+'+n+' XP';
+  el.style.left=(r?r.left+r.width/2:window.innerWidth/2)+'px';
+  el.style.top=(r?r.top:window.innerHeight/2)+'px';
+  document.getElementById('fxLayer').appendChild(el);
+  setTimeout(()=>el.remove(),1100);
+}
+function levelUp(){
+  const c=document.getElementById('lvlChip');
+  document.getElementById('lvlVal').textContent=level;
+  c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump');
+  showToast('⚡','Level '+level+'!','Keep going!');
+  confettiBurst(28);
+}
+function bumpStreak(){streak++;document.getElementById('streakVal').textContent=streak;document.getElementById('streakChip').classList.add('lit');}
+function resetStreak(){streak=0;document.getElementById('streakVal').textContent=0;document.getElementById('streakChip').classList.remove('lit');}
+function loseHeart(){
+  if(hearts<=0)return; hearts--;
+  const hs=document.querySelectorAll('#hearts .heart');
+  const h=hs[hearts];
+  h.classList.add('pop'); setTimeout(()=>{h.classList.add('lost');h.classList.remove('pop');},220);
 }
 
-function silence() {
-  document.getElementById('axonBubble').classList.remove('vis');
-  axonOpen = false;
+function confettiBurst(count){
+  const colors=['#175FFF','#00E5C8','#FFC93C','#ff4450','#9d6bff'];
+  const fx=document.getElementById('fxLayer');
+  for(let i=0;i<(count||24);i++){
+    const c=document.createElement('div'); c.className='confetti';
+    c.style.left=Math.random()*100+'vw'; c.style.background=colors[i%colors.length]; c.style.opacity=0.9;
+    const dur=1.6+Math.random()*1.4, delay=Math.random()*.3;
+    c.style.animation=`confettiFall ${dur}s linear ${delay}s forwards`;
+    fx.appendChild(c); setTimeout(()=>c.remove(),(dur+delay)*1000+100);
+  }
+}
+function showToast(emoji,title,sub){
+  const t=document.getElementById('toast');
+  t.innerHTML='<div class="t-emoji">'+emoji+'</div><div class="t-title">'+title+'</div><div class="t-sub">'+(sub||'')+'</div>';
+  t.classList.add('show'); clearTimeout(window._toast);
+  window._toast=setTimeout(()=>t.classList.remove('show'),1900);
 }
 
-function toggleAxon() {
-  axonOpen ? silence() : document.getElementById('axonBubble').classList.add('vis');
-  axonOpen = !axonOpen;
+/* ════════════ STEP RAIL ════════════ */
+function advStep(n){
+  for(let i=0;i<=n;i++){
+    const s=document.getElementById('sn'+i);
+    s.className='step-num done';
+    document.getElementById('sl'+i).className='step-lbl';
+    if(i<n&&document.getElementById('sl-'+i))document.getElementById('sl-'+i).className='step-line done';
+  }
+  if(n+1<=3){document.getElementById('sn'+(n+1)).className='step-num active';document.getElementById('sl'+(n+1)).className='step-lbl active';}
 }
+function showEl(id){document.getElementById(id).classList.add('show');}
 
+/* ════════════ STAGE DATA ════════════ */
 const stg=[
-  {b:'Stage 0',n:'Randomly initialised',d:'All weights are random. No training, no language — a true blank slate.',s:['Language: none','Instructions: ✗','Alignment: ✗'],g:false,o:'%7 m% @b^^ ...eM4il... [TOKEN OVERFLOW] ...NULL_ref',c:'error',st:'No language capability',m:"Stage 0 — before any training. Every output is pure noise. Click Stage 1 to see the first real change!"},
+  {b:'Stage 0',n:'Randomly initialised',d:'All weights are random. No training, no language — a true blank slate.',s:['Language: none','Instructions: ✗','Alignment: ✗'],g:false,o:'%7 m% @b^^ ...eM4il... [TOKEN OVERFLOW] ...NULL_ref',c:'error',st:'No language capability',m:"Stage 0 — before any training. Every output is pure noise. Hit <strong>Next stage</strong> to see the first real change!"},
   {b:'Stage 1',n:'Pre-training complete',d:'Ingested billions of documents. Learned grammar by predicting the next token.',s:['Language: ✓','Instructions: ✗','Alignment: ✗'],g:true,o:'Drafting a polite response is a useful professional skill. Team leaders often value clear communication in collaborative environments...',c:'warn',st:'Understands language — but autocompleting, not helping',m:"The model now speaks fluent language — but it's just continuing your sentence. Pre-training teaches next-token prediction, not instruction following. Stage 2 changes that."},
   {b:'Stage 2',n:'Instruction fine-tuned',d:'Trained on human-labelled instruction-response pairs. Now follows specific commands.',s:['Language: ✓','Instructions: ✓','Alignment: partial'],g:true,o:"Response:\n\nHello,\n\nI acknowledge your email. The matter has been reviewed. Action will be taken.\n\nRegards.",c:'',st:'Follows the instruction — but cold and robotic',m:"It followed the instruction and wrote an email — but it's stiff and impersonal. Stage 3 fixes that by teaching the model what humans actually find helpful."},
   {b:'Stage 3',n:'Preference fine-tuning (RLHF)',d:'Human reviewers scored thousands of response pairs. The model learned to prefer warm, safe, genuinely useful outputs.',s:['Language: ✓','Instructions: ✓','Alignment: ✓'],g:true,o:"Subject: Re: Team Update\n\nHi [Name],\n\nThank you — that's really helpful context.\n\nThe approach looks solid. One thought: aligning on the timeline before Thursday's standup might prevent bottlenecks.\n\nHappy to hop on a quick call if useful.\n\nBest,\n[Your Name]",c:'active',st:'Warm, professional, aligned with human preferences ✓',m:"Now that's a genuinely helpful email! RLHF taught the model what humans actually value. One more stage to go!"},
-  {b:'Stage 4',n:'Reasoning fine-tuning',d:'Trained on logic puzzles. The model now works through problems step-by-step before answering.',s:['Language: ✓','Instructions: ✓','Reasoning: ✓✓'],g:true,o:'COT',c:'active',st:'Chain-of-Thought reasoning + ideal response ✓',m:"The final stage — the model shows its working step-by-step before answering. This is Chain-of-Thought, what powers the most advanced AI models today. Ready for the poll?"}
-];
-let cur=0,pv=false,qI=0,qS=0;
-function advStep(n){for(let i=0;i<=n;i++){document.getElementById('sn'+i).className='step-num done';document.getElementById('sl'+i).className='step-lbl';if(i<n&&document.getElementById('sl-'+i))document.getElementById('sl-'+i).className='step-line done';}if(n+1<=3){document.getElementById('sn'+(n+1)).className='step-num active';document.getElementById('sl'+(n+1)).className='step-lbl active';}}
-function showEl(id){document.getElementById(id).classList.add('show');}
-function setStage(i){cur=i;document.querySelectorAll('.s-tab').forEach((t,j)=>t.classList.toggle('active',j===i));const s=stg[i];document.getElementById('sBadge').textContent=s.b;document.getElementById('sBadge').className='stage-badge'+(s.g?' good':'');document.getElementById('sName').textContent=s.n;document.getElementById('sDesc').textContent=s.d;const sp=document.getElementById('sStats');sp.innerHTML='';s.s.forEach(x=>{const el=document.createElement('span');el.className='stat-pill'+(x.includes('✓')?' ok':'');el.textContent=x;sp.appendChild(el);});const out=document.getElementById('stOut');out.className='out-box'+(s.c?' '+s.c:'');if(s.o==='COT'){out.innerHTML='<div class="cot-block"><div class="cot-step">Step 1: <span>Task — draft a polite team email reply.</span></div><div class="cot-step">Step 2: <span>Tone — warm, professional, collaborative.</span></div><div class="cot-step">Step 3: <span>Structure — acknowledge · add value · suggest next step · close.</span></div><div class="cot-step">Step 4: <span>Review — warm ✓  Actionable ✓  Appropriate ✓</span></div></div><div style="margin-top:9px;font-size:12px;color:#F6F3F0;">Subject: Re: Team Update<br><br>Hi [Name],<br><br>Thanks — really clear summary. The direction looks strong.<br><br>Quick thought: locking down the Q3 timeline before Thursday could save back-and-forth.<br><br>Happy to set up 15 mins if useful.<br><br>Best, [Your Name]</div>';}else{out.textContent=s.o;}document.getElementById('stStat').textContent=s.st;for(let j=0;j<5;j++){document.getElementById('pd'+j).classList.toggle('on',j<=i);if(j<4)document.getElementById('pl'+j).classList.toggle('on',j<i);}if(i>=1)advStep(1);setTimeout(()=>flyTo('outputCard',s.m,[{t:i<4?"Next stage →":"See the poll",f:i<4?"nextStg":"openPoll"},{t:"Got it",f:"silence"}]),250);}
-function nextStg(){silence();setStage(cur+1);}
-function openPoll(){silence();showEl('pollArea');advStep(2);setTimeout(()=>flyTo('pollArea',"Which training stage makes the biggest quality leap, in your view?",[{t:"I'll vote",f:"silence"}]),200);}
-function vote(i){if(pv)return;pv=true;const sim=[40,18,27,15];sim[i]+=5;const tot=sim.reduce((a,b)=>a+b,0);for(let j=0;j<4;j++){const p=Math.round(sim[j]/tot*100);document.getElementById('pf'+j).style.width=p+'%';document.getElementById('pp'+j).textContent=p+'%';document.querySelectorAll('.poll-row')[j].classList.add('voted');}document.getElementById('pollResult').style.display='block';flyTo('pollArea',"Most engineers pick Stage 1 — zero to fluent language is the most dramatic change. Ready for the quiz?",[{t:"Quiz time!",f:"openQuiz"},{t:"I see",f:"silence"}]);}
-function openQuiz(){silence();showEl('quizWrap');advStep(3);loadQ();setTimeout(()=>flyTo('quizWrap',"Four questions — all based on the video demo you just stepped through.",[{t:"Ready",f:"silence"}]),300);}
-const Qs=[
-  {
-    q:"In the video's demo, the same prompt is sent to the model at every stage. What is the prompt used?",
-    opts:["'Write a Python script to sort a list'","'Summarise this article in three sentences'","'Could you please help me draft a polite response to this team email?'","'What is the capital of France?'"],
-    ans:2,
-    exp:"The video uses an email-drafting prompt throughout to show the contrast — the same request produces gibberish at Stage 0 and a polished, warm reply by Stage 3."
-  },
-  {
-    q:"At Stage 1 (Pre-Training), the model responds to the email prompt by autocompleting the sentence. Why does it do this instead of helping?",
-    opts:["The model is broken","Pre-training only teaches next-token prediction, not how to follow instructions","The prompt is too vague","The model needs more parameters"],
-    ans:1,
-    exp:"Pre-training trains the model to continue text sequences — it has no concept of 'instruction' yet. It treats the prompt as a sentence to extend, not a task to complete."
-  },
-  {
-    q:"The video shows the Stage 2 output is functional but cold and robotic. Which stage specifically teaches the model to be warm and helpful?",
-    opts:["Stage 1 — Pre-Training","Stage 2 — Instruction Fine-Tuning","Stage 3 — Preference Fine-Tuning / RLHF","Stage 4 — Reasoning Fine-Tuning"],
-    ans:2,
-    exp:"Stage 3 (Preference Fine-Tuning / RLHF) uses human reviewers who score model outputs — teaching the model to prefer responses that are warm, polite, and genuinely helpful."
-  },
-  {
-    q:"What unique capability does Stage 4 (Reasoning Fine-Tuning) add that no earlier stage provides?",
-    opts:["The ability to follow instructions","The ability to generate grammatically correct text","Chain-of-Thought — the model reasons step-by-step before producing the answer","The ability to be polite and safe"],
-    ans:2,
-    exp:"Reasoning Fine-Tuning trains the model on logic puzzles with reward structures, teaching it to work through problems in steps before answering — visible as Chain-of-Thought output in the video demo."
-  }
+  {b:'Stage 4',n:'Reasoning fine-tuning',d:'Trained on logic puzzles. The model now works through problems step-by-step before answering.',s:['Language: ✓','Instructions: ✓','Reasoning: ✓✓'],g:true,o:'COT',c:'active',st:'Chain-of-Thought reasoning + ideal response ✓',m:"The final stage — the model shows its working step-by-step before answering. This is <strong>Chain-of-Thought</strong>, what powers the most advanced AI today. Ready for the poll?"}
 ];
 
-function loadQ(){const q=Qs[qI];document.getElementById('qq').textContent=(qI+1)+'. '+q.q;document.getElementById('qfb').textContent='';document.getElementById('qfb').className='quiz-fb';document.getElementById('qnext').style.display='none';const opts=document.getElementById('qo');opts.innerHTML='';q.opts.forEach((o,i)=>{const b=document.createElement('button');b.className='opt-btn';b.textContent=o;b.onclick=()=>{document.querySelectorAll('.opt-btn').forEach(x=>x.onclick=null);const fb=document.getElementById('qfb');if(i===q.ans){b.classList.add('correct');qS++;fb.textContent=q.exp;fb.className='quiz-fb ok';flyTo('quizWrap','✅ '+q.exp,[{t:Qs.length-1>qI?"Next →":"Finish",f:Qs.length-1>qI?"nextA":"finishQuiz"}]);}else{b.classList.add('wrong');document.querySelectorAll('.opt-btn')[q.ans].classList.add('correct');fb.textContent=q.exp;flyTo('quizWrap',q.exp,[{t:Qs.length-1>qI?"Next →":"Finish",f:Qs.length-1>qI?"nextA":"finishQuiz"}]);}document.getElementById('qs').textContent=qS+' / '+Qs.length;};opts.appendChild(b);});}
-function nextA(){silence();qI++;loadQ();}
+function setStage(i){
+  cur=i;
+  document.querySelectorAll('.s-tab').forEach((t,j)=>t.classList.toggle('active',j===i));
+  const s=stg[i];
+  document.getElementById('sBadge').textContent=s.b;
+  document.getElementById('sBadge').className='stage-badge'+(s.g?' good':'');
+  document.getElementById('sName').textContent=s.n;
+  document.getElementById('sDesc').textContent=s.d;
+  const sp=document.getElementById('sStats'); sp.innerHTML='';
+  s.s.forEach(x=>{const el=document.createElement('span');el.className='stat-pill'+(x.includes('✓')?' ok':'');el.textContent=x;sp.appendChild(el);});
+  const out=document.getElementById('stOut');
+  out.className='out-box'+(s.c?' '+s.c:'');
+  if(s.o==='COT'){
+    out.innerHTML='<div class="cot-block"><div class="cot-step">Step 1: <span>Task — draft a polite team email reply.</span></div><div class="cot-step">Step 2: <span>Tone — warm, professional, collaborative.</span></div><div class="cot-step">Step 3: <span>Structure — acknowledge · add value · suggest next step · close.</span></div><div class="cot-step">Step 4: <span>Review — warm ✓  Actionable ✓  Appropriate ✓</span></div></div><div style="margin-top:9px;font-size:12px;color:var(--text);">Subject: Re: Team Update<br><br>Hi [Name],<br><br>Thanks — really clear summary. The direction looks strong.<br><br>Quick thought: locking down the Q3 timeline before Thursday could save back-and-forth.<br><br>Happy to set up 15 mins if useful.<br><br>Best, [Your Name]</div>';
+  } else { out.textContent=s.o; }
+  document.getElementById('stStat').textContent=s.st;
+  for(let j=0;j<5;j++){document.getElementById('pd'+j).classList.toggle('on',j<=i);if(j<4)document.getElementById('pl'+j).classList.toggle('on',j<i);}
+  if(i>=1)advStep(1);
+  /* gamification: award XP per newly explored stage */
+  if(!visited.has(i)){
+    visited.add(i);
+    addXP(10,'outputCard'); bumpStreak();
+    if(visited.size===5){ confettiBurst(18); showToast('🚀','All 5 stages explored!','From noise to reasoning'); }
+  }
+  const mood=i===0?'think':(i===4?'celebrate':'happy');
+  const btns = i<4 ? [{t:"Next stage →",f:"nextStg"}] : [{t:"See the poll →",f:"openPoll"}];
+  setTimeout(()=>flyTo('simArea',s.m,btns,mood,'outputCard'),250);
+}
+function nextStg(){ setStage(cur+1); }
+
+/* ════════════ POLL ════════════ */
+function openPoll(){
+  showEl('pollArea'); advStep(2);
+  if(pv){
+    setTimeout(()=>flyTo('pollArea',"You've already cast your vote on this one — ready for the quiz?",[{t:"Quiz time! 📝",f:"openQuiz"}],'happy'),250);
+  } else {
+    setTimeout(()=>flyTo('pollArea',"Which training stage makes the biggest quality leap, in your view? Tap your pick below 👇",[],'think'),250);
+  }
+}
+function vote(i){
+  if(pv)return; pv=true;
+  const sim=[40,18,27,15]; sim[i]+=5; const tot=sim.reduce((a,b)=>a+b,0);
+  for(let j=0;j<4;j++){const p=Math.round(sim[j]/tot*100);document.getElementById('pf'+j).style.width=p+'%';document.getElementById('pp'+j).textContent=p+'%';document.querySelectorAll('.poll-row')[j].classList.add('voted');}
+  document.getElementById('pollResult').style.display='block';
+  addXP(15,'pollArea'); bumpStreak(); confettiBurst(10);
+  flyTo('pollArea',"Most engineers pick <strong>Stage 1</strong> — zero to fluent language is the most dramatic change in the whole pipeline. Ready for the quiz?",[{t:"Quiz time! 📝",f:"openQuiz"}],'celebrate');
+}
+
+/* ════════════ QUIZ ════════════ */
+function openQuiz(){
+  showEl('quizWrap'); advStep(3); loadQ();
+  setTimeout(()=>flyTo('quizWrap',"Four questions — all based on the video demo you just stepped through. Tap an answer!",[],'think'),300);
+}
+const Qs=[
+  {q:"In the video's demo, the same prompt is sent to the model at every stage. What is the prompt used?",
+   opts:["'Write a Python script to sort a list'","'Summarise this article in three sentences'","'Could you please help me draft a polite response to this team email?'","'What is the capital of France?'"],ans:2,
+   exp:"The video uses an email-drafting prompt throughout to show the contrast — the same request produces gibberish at Stage 0 and a polished, warm reply by Stage 3."},
+  {q:"At Stage 1 (Pre-Training), the model responds by autocompleting the sentence. Why does it do this instead of helping?",
+   opts:["The model is broken","Pre-training only teaches next-token prediction, not how to follow instructions","The prompt is too vague","The model needs more parameters"],ans:1,
+   exp:"Pre-training trains the model to continue text sequences — it has no concept of 'instruction' yet. It treats the prompt as a sentence to extend, not a task to complete."},
+  {q:"The Stage 2 output is functional but cold and robotic. Which stage specifically teaches the model to be warm and helpful?",
+   opts:["Stage 1 — Pre-Training","Stage 2 — Instruction Fine-Tuning","Stage 3 — Preference Fine-Tuning / RLHF","Stage 4 — Reasoning Fine-Tuning"],ans:2,
+   exp:"Stage 3 (Preference Fine-Tuning / RLHF) uses human reviewers who score model outputs — teaching the model to prefer responses that are warm, polite, and genuinely helpful."},
+  {q:"What unique capability does Stage 4 (Reasoning Fine-Tuning) add that no earlier stage provides?",
+   opts:["The ability to follow instructions","The ability to generate grammatically correct text","Chain-of-Thought — the model reasons step-by-step before producing the answer","The ability to be polite and safe"],ans:2,
+   exp:"Reasoning Fine-Tuning trains the model on logic puzzles with reward structures, teaching it to work through problems in steps before answering — visible as Chain-of-Thought output in the demo."}
+];
+
+function loadQ(){
+  const q=Qs[qI];
+  document.getElementById('qq').textContent=(qI+1)+'. '+q.q;
+  document.getElementById('qfb').textContent=''; document.getElementById('qfb').className='quiz-fb';
+  document.getElementById('qnext').style.display='none';
+  const opts=document.getElementById('qo'); opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const b=document.createElement('button'); b.className='opt-btn'; b.textContent=o;
+    b.onclick=()=>{
+      document.querySelectorAll('.opt-btn').forEach(x=>x.onclick=null);
+      const fb=document.getElementById('qfb'); const last=(qI===Qs.length-1);
+      if(i===q.ans){
+        b.classList.add('correct'); qS++;
+        fb.textContent=q.exp; fb.className='quiz-fb ok';
+        bumpStreak(); addXP(30,'quizWrap'); confettiBurst(12);
+        flyTo('quizWrap','✅ '+q.exp,[{t:last?"See results 🎉":"Next →",f:last?"finishQuiz":"nextA"}],'celebrate');
+      } else {
+        b.classList.add('wrong');
+        document.querySelectorAll('.opt-btn')[q.ans].classList.add('correct');
+        fb.textContent=q.exp;
+        loseHeart(); resetStreak();
+        flyTo('quizWrap',q.exp,[{t:last?"See results":"Next →",f:last?"finishQuiz":"nextA"}],'sad');
+      }
+      document.getElementById('qs').textContent=qS+' / '+Qs.length;
+    };
+    opts.appendChild(b);
+  });
+}
+function nextA(){qI++;loadQ();flyTo('quizWrap','Question '+(qI+1)+' — keep the streak going!',[],'think');}
 function nextQ(){qI++;loadQ();}
-function finishQuiz(){silence();const ms=["Re-watch the video demo — focus on the output at each stage.","Good! Step back through each tab and compare outputs.","Excellent — you've fully understood the training pipeline. 🎓"];setTimeout(()=>flyTo('quizWrap','You scored '+qS+'/'+Qs.length+'. '+ms[qS<2?0:qS<4?1:2],[{t:"Thanks Axon!",f:"silence"}]),200);}
+function finishQuiz(){
+  advStep(3);
+  const passed=qS>=3;
+  if(passed) confettiBurst(40);
+  const ms=["Re-watch the demo — focus on the output at each stage.","Good! Step back through each tab and compare outputs.","Outstanding — you've fully understood the training pipeline. 🎓"];
+  setMood(passed?'celebrate':'sad');
+  showToast(qS===4?'🏆':passed?'🎉':'💪',qS===4?'Flawless!':passed?'Module complete!':'Keep going!','You scored '+qS+'/'+Qs.length+' · '+xp+' XP earned');
+  setTimeout(()=>flyTo('quizWrap','You scored '+qS+'/'+Qs.length+'. '+ms[qS<2?0:qS<4?1:2],[{t:"Restart module",f:"restartAll",soft:true}],passed?'happy':'think'),200);
+}
+function restartAll(){location.reload();}
+
+/* ════════════ LOAD ════════════ */
 loadQ();
 
 window.addEventListener('load',()=>{
-  smoothTutorFlight();
-  setTimeout(()=>flyTo('heroSection',"Hi! I'm Axon. This video used one email prompt at five training stages — each output completely different. Read the concept card, then explore each stage!",[{t:"Show me",f:"showSim"}]),500);
+  const w=document.getElementById('axonWidget');
+  if(w){
+    w.style.transition='none';
+    placeRobot('conceptCard');
+    requestAnimationFrame(()=>w.style.transition='');
+  }
+  setTimeout(()=>document.getElementById('coachDock').classList.add('up'),350);
+  setTimeout(()=>flyTo('conceptCard',"Hi! I'm <strong>Axon</strong> ⚡ This video sent ONE email prompt to the model at 5 training stages — and got wildly different results. Read the concept, then let's step through them!",[{t:"Explore the stages →",f:"showSim"}],'happy'),650);
 });
 
-function showSim(){showEl('simArea');advStep(1);setTimeout(()=>setStage(0),150);}
+function showSim(){
+  showEl('simArea'); advStep(1);
+  setTimeout(()=>flyTo('stageTabs',"These are the 5 training stages. Watch the SAME prompt transform across them — let's begin at Stage 0, a blank slate.",[{t:"Start at Stage 0 →",f:"startStages"}],'happy'),350);
+}
+function startStages(){ setStage(0); }
 </script>
 </body></html>
